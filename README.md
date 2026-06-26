@@ -108,11 +108,14 @@ system Bluetooth daemon over D-Bus (it coexists with `bluetoothd` — no adapter
 > nothing here** — the plugin uses the system Bluetooth automatically.
 
 A Docker container can't see the host's Bluetooth by default, and the official
-`homebridge/homebridge` image (with `ENABLE_AVAHI=1`) runs its **own** internal D-Bus. So you
-do **two** small one-time things:
+`homebridge/homebridge` image (with `ENABLE_AVAHI=1`) runs its **own** internal D-Bus. Three
+one-time things are required:
 
-**1. Mount the host's D-Bus socket** into the container — add one line to your Homebridge
-`docker-compose.yml`:
+1. **Mount** the host's D-Bus socket into the container.
+2. **Unconfine AppArmor** for the container (otherwise the host's dbus-daemon blocks it).
+3. **Set `dbusAddress`** in the plugin config so it uses that host bus.
+
+**Steps 1 & 2 — edit your Homebridge `docker-compose.yml`:**
 
 ```yaml
 services:
@@ -133,7 +136,7 @@ Then `docker compose up -d` to recreate the container.
 > Bluetooth. The Homebridge container already runs with host networking; if you'd rather keep
 > confinement, write a custom AppArmor profile that allows `dbus send`.
 
-**2. Set `dbusAddress` in the plugin config** to that path:
+**Step 3 — set `dbusAddress` in the plugin config** to that path:
 
 ```
 unix:path=/run/host-dbus/system_bus_socket
