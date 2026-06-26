@@ -116,11 +116,11 @@
               ],
               "required": true
             },
-            "ratio": { "title": "Brew Ratio (1:N)", "type": "number", "default": 16, "minimum": 1, "maximum": 25, "required": true },
+            "ratio": { "title": "Brew Ratio (1:N)", "type": "number", "default": 16, "minimum": 5, "maximum": 25, "multipleOf": 0.5, "required": true, "description": "Water-to-coffee ratio, 1:5 to 1:25 in 0.5 steps. Dose and ratio are the source of truth: your pour volumes should add up to dose × ratio (e.g. 18 g × 17 = 306 ml)." },
             "cupMax": { "title": "Cup Weight Max (g, advanced)", "type": "number" },
             "cupMin": { "title": "Cup Weight Min (g, advanced)", "type": "number" },
             "pours": {
-              "title": "Pours",
+              "title": "Pours (volumes should sum to dose × ratio)",
               "type": "array",
               "items": {
                 "type": "object",

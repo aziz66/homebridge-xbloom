@@ -17,7 +17,7 @@ import type {
 } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
-import { type XBloomConfig, type RecipeConfig } from './config.js';
+import { checkRecipe, type XBloomConfig, type RecipeConfig } from './config.js';
 import { RecipeAccessory } from './recipeSwitch.js';
 import { StopAccessory } from './stopSwitch.js';
 import { ConnectionAccessory } from './connectionSwitch.js';
@@ -269,6 +269,9 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
     if (!Array.isArray(r.pours) || r.pours.length < 1) {
       this.log.error(`Recipe "${r.name}" has no pours — skipping.`);
       return false;
+    }
+    for (const warning of checkRecipe(r)) {
+      this.log.warn(`Recipe "${r.name}": ${warning}`);
     }
     return true;
   }

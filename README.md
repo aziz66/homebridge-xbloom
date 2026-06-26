@@ -207,8 +207,8 @@ Use the Homebridge UI settings, or add a platform block to `config.json`:
 | `doseGrams` | Beans to grind, 5–40 g. |
 | `grinderSize` | Grind setting, 1–80. |
 | `rpm` | Grinder speed: 60/70/80/90/100/110/120. |
-| `ratio` | Brew ratio (1:N), e.g. `17` for 1:17. |
-| `pours[]` | Ordered pour stages. |
+| `ratio` | Brew ratio (1:N), **1:5–1:25 in 0.5 steps** (e.g. `17` for 1:17). |
+| `pours[]` | Ordered pour stages. **Volumes should sum to `doseGrams × ratio`** (see note below). |
 | `pours[].volume` | Water for this pour, ml. |
 | `pours[].temperature` | °C (40–100). |
 | `pours[].flowRate` | e.g. `3.5`. |
@@ -216,6 +216,12 @@ Use the Homebridge UI settings, or add a platform block to `config.json`:
 | `pours[].pausing` | Seconds to pause after this pour. |
 | `pours[].vibBefore` / `vibAfter` | Optional grounds vibration. |
 | `cupMax` / `cupMin` | Advanced: explicit cup weight bounds (g), overrides `cupType`. |
+
+> **Dose & ratio are the source of truth.** The total water = `doseGrams × ratio`
+> (e.g. 18 g × 17 = **306 ml**), and your pour volumes should add up to that. If they don't,
+> the plugin logs a warning at startup — the machine will still pour exactly the volumes you
+> entered, but the actual ratio in the cup won't match what you set. Adjust the pour volumes to
+> sum to `dose × ratio`, or change the dose/ratio.
 
 > **Tip:** dial in your recipe in the official xBloom app first, then copy the numbers
 > (dose, grind, ratio, and each pour's water/temp/flow/pause/pattern) into the config.

@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-26
+
+### Added
+- Recipe consistency check: **dose × ratio = total pour water**. If your pour volumes don't add
+  up to `doseGrams × ratio`, the plugin logs a warning at startup (showing the expected ml and
+  the actual ratio it will brew). Non-fatal — the machine still pours the configured volumes.
+
+### Changed
+- `ratio` is now constrained to **1:5–1:25 in 0.5 steps** in the config schema, with a clearer
+  description that dose and ratio are the source of truth for total water.
+
+[0.1.3]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v0.1.3
+
 ## [0.1.2] - 2026-06-26
 
 ### Fixed
