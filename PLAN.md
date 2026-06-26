@@ -23,7 +23,7 @@ ever been sent to the machine.** A live brew happens only after explicit user ap
 - **Machine:** `XBLOOM 123456`, BLE address `AA:BB:CC:DD:EE:FF` (public). Model: Original-class
   (`type_code = 0x01`). Brewing still requires a physical pod/grounds + cup loaded — BLE only
   triggers the program.
-- **Host (nuc14):** Intel AX211 radio `hci0` (`00:D7:6D:DD:C2:54`). BlueZ 5.72 + `bluetooth.service`
+- **Host (nuc14):** Intel AX211 radio `hci0` (`00:11:22:33:44:55`). BlueZ 5.72 + `bluetooth.service`
   installed/enabled 2026-06-26. Node 20 present today, but **HB2 needs Node 22/24** (see §7).
 - **Homebridge** runs in Docker (host network). BLE is reached via the host's bluetoothd over
   D-Bus (see §11) — no separate host daemon.

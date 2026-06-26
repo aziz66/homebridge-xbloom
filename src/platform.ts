@@ -17,7 +17,7 @@ import type {
 } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
-import { checkRecipe, type XBloomConfig, type RecipeConfig } from './config.js';
+import { checkRecipe, recipeErrors, type XBloomConfig, type RecipeConfig } from './config.js';
 import { RecipeAccessory } from './recipeSwitch.js';
 import { StopAccessory } from './stopSwitch.js';
 import { ConnectionAccessory } from './connectionSwitch.js';
@@ -45,6 +45,7 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
   private resolveComplete?: () => void;
   private readonly holdTimeoutMs: number;
   private holdTimer?: ReturnType<typeof setTimeout>;
+  private connLock: Promise<unknown> = Promise.resolve(); // serializes BLE open/close
 
   constructor(
     public readonly log: Logging,
@@ -91,6 +92,17 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
     return this.busy;
   }
 
+  isHeld(): boolean {
+    return this.held;
+  }
+
+  /** Run a connect/disconnect op serialized after any in-flight one (prevents races). */
+  private withConnLock<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.connLock.then(fn, fn);
+    this.connLock = run.catch(() => undefined);
+    return run as Promise<T>;
+  }
+
   // ── Brew orchestration (connect-on-demand) ─────────────────────────────
   async startBrew(recipe: RecipeConfig, onChar: { updateOn(v: boolean): void }): Promise<void> {
     if (this.busy) {
@@ -117,10 +129,14 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
       this.brewingSensor?.setFault(true);
     } finally {
       this.busy = false;
-      onChar.updateOn(false);
-      this.brewingSensor?.setBrewing(false);
       this.resolveComplete = undefined;
-      if (!this.held) await this.release();
+      try {
+        onChar.updateOn(false);
+        this.brewingSensor?.setBrewing(false);
+        if (!this.held) await this.release();
+      } catch (err) {
+        this.log.error('Brew cleanup error:', err);
+      }
     }
   }
 
@@ -165,18 +181,22 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  private async ensureConnected(): Promise<void> {
-    if (!this.transport.isConnected()) {
-      this.log.info('[ble] connecting on demand…');
-      await this.transport.open();
-    }
+  private ensureConnected(): Promise<void> {
+    return this.withConnLock(async () => {
+      if (!this.transport.isConnected()) {
+        this.log.info('[ble] connecting on demand…');
+        await this.transport.open();
+      }
+    });
   }
 
-  private async release(): Promise<void> {
-    if (this.transport.isConnected()) {
-      await this.transport.close();
-      this.connectionAcc?.updateOn(false);
-    }
+  private release(): Promise<void> {
+    return this.withConnLock(async () => {
+      if (this.transport.isConnected()) {
+        await this.transport.close();
+        this.connectionAcc?.updateOn(false);
+      }
+    });
   }
 
   private waitForComplete(timeoutMs: number): Promise<boolean> {
@@ -185,11 +205,12 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
       const finish = (ok: boolean) => {
         if (settled) return;
         settled = true;
+        clearTimeout(timer);
         this.resolveComplete = undefined;
         resolve(ok);
       };
+      const timer = setTimeout(() => finish(false), timeoutMs);
       this.resolveComplete = () => finish(true);
-      setTimeout(() => finish(false), timeoutMs);
     });
   }
 
@@ -233,15 +254,22 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
     const recipes = this.config.recipes ?? [];
     if (recipes.length === 0) this.log.warn('No recipes configured.');
     const seen = new Set<string>();
+    const usedNames = new Set<string>();
 
     for (const recipe of recipes) {
       if (!this.validateRecipe(recipe)) continue;
+      const key = recipe.name.trim().toLowerCase();
+      if (usedNames.has(key)) {
+        this.log.error(`Duplicate recipe name "${recipe.name}" — skipping (names must be unique).`);
+        continue;
+      }
+      usedNames.add(key);
       const uuid = this.api.hap.uuid.generate(`${PLUGIN_NAME}:recipe:${recipe.name}`);
       seen.add(uuid);
       new RecipeAccessory(this, this.getOrCreate(uuid, recipe.name, { recipe }), recipe);
     }
 
-    if (this.config.exposeStopSwitch) {
+    if (this.config.exposeStopSwitch !== false) {
       const uuid = this.api.hap.uuid.generate(`${PLUGIN_NAME}:stop`);
       seen.add(uuid);
       new StopAccessory(this, this.getOrCreate(uuid, 'Stop Brew', { stop: true }));
@@ -292,6 +320,12 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
     }
     if (!Array.isArray(r.pours) || r.pours.length < 1) {
       this.log.error(`Recipe "${r.name}" has no pours — skipping.`);
+      return false;
+    }
+    const errors = recipeErrors(r);
+    if (errors.length > 0) {
+      for (const e of errors) this.log.error(`Recipe "${r.name}": ${e}`);
+      this.log.error(`Recipe "${r.name}" has invalid values — skipping (won't send it to the machine).`);
       return false;
     }
     for (const warning of checkRecipe(r)) {

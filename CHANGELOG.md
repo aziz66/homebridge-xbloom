@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-26
+
+Hardening from a pre-publish multi-perspective code audit, plus updated branding.
+
+### Added
+- Hard validation of recipe numeric ranges (dose, grind, rpm, ratio, and each pour's
+  volume/temperature/flow/pattern/pause). Out-of-range recipes are skipped with a clear error
+  instead of encoding a bad frame for the machine.
+- The connection switch now reports its real held state (`onGet`).
+
+### Fixed
+- Reject **duplicate recipe names** (the second previously overrode the first silently).
+- `exposeStopSwitch` now correctly defaults to on (matching the schema) when the key is omitted.
+- Serialize BLE connect/disconnect to remove a connect-vs-release race.
+- Clear the brew-watch timeout when a brew ends early (no lingering 5-minute timers).
+- Scope the `DBUS_SYSTEM_BUS_ADDRESS` env change to bus creation (no process-wide side-effect).
+- Guard the brew teardown block and reject an oversized recipe body (>255 bytes).
+
+[1.1.2]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v1.1.2
+
 ## [1.1.1] - 2026-06-26
 
 ### Fixed

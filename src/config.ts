@@ -83,6 +83,33 @@ export function totalPourMl(r: RecipeConfig): number {
   return r.pours.reduce((sum, p) => sum + (p.volume || 0), 0);
 }
 
+const VALID_RPM = new Set([0, 60, 70, 80, 90, 100, 110, 120]);
+
+function inRange(v: unknown, min: number, max: number): boolean {
+  return typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
+}
+
+/**
+ * Hard validation of a recipe's numeric ranges (the config UI enforces these, but a
+ * hand-edited config.json can bypass the schema). Returns fatal errors; a recipe with
+ * any error should be skipped rather than encoded into a frame sent to the machine.
+ */
+export function recipeErrors(r: RecipeConfig): string[] {
+  const errors: string[] = [];
+  if (!inRange(r.doseGrams, 5, 40)) errors.push(`doseGrams ${r.doseGrams} out of range (5–40)`);
+  if (!inRange(r.grinderSize, 1, 80)) errors.push(`grinderSize ${r.grinderSize} out of range (1–80)`);
+  if (!inRange(r.ratio, RATIO_MIN, RATIO_MAX)) errors.push(`ratio ${r.ratio} out of range (${RATIO_MIN}–${RATIO_MAX})`);
+  if (!VALID_RPM.has(r.rpm)) errors.push(`rpm ${r.rpm} must be one of 60,70,80,90,100,110,120`);
+  r.pours?.forEach((p, i) => {
+    if (!inRange(p.volume, 1, 300)) errors.push(`pour ${i + 1} volume ${p.volume} out of range (1–300 ml)`);
+    if (!inRange(p.temperature, 40, 100)) errors.push(`pour ${i + 1} temperature ${p.temperature} out of range (40–100 °C)`);
+    if (!inRange(p.flowRate, 0.5, 7)) errors.push(`pour ${i + 1} flowRate ${p.flowRate} out of range (0.5–7)`);
+    if (![0, 1, 2].includes(p.pattern)) errors.push(`pour ${i + 1} pattern ${p.pattern} must be 0, 1, or 2`);
+    if (!inRange(p.pausing, 0, 300)) errors.push(`pour ${i + 1} pausing ${p.pausing} out of range (0–300 s)`);
+  });
+  return errors;
+}
+
 /**
  * Recipe consistency check. Dose and ratio are the source of truth: the pours
  * should add up to dose × ratio. Returns human-readable warnings (non-fatal —

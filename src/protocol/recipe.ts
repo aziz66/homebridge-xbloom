@@ -71,5 +71,8 @@ export function encodeRecipe(recipe: XBloomRecipe): Buffer {
     Math.round(recipe.ratio * 10) & 0xff,
   ];
 
+  if (body.length > 255) {
+    throw new Error(`Recipe body is ${body.length} bytes (max 255). Reduce the number or size of pours.`);
+  }
   return Buffer.from([body.length, ...body, ...footer]);
 }

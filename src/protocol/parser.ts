@@ -1,8 +1,9 @@
 /**
  * Parser for xBloom status notifications (FFE2).
  *
- * Inbound frames: 0x58 | device_id=0x07 | type_code=0x02 | command(2,LE) |
- *                 length(4,LE) | 0xC1 | payload | crc16(2,LE)
+ * Inbound frames (wire order): 0x58 | 0x02 | 0x07 | command(2,LE) | length(4,LE) |
+ *                 0xC1 | payload | crc16(2,LE)
+ * (bytes 1–2 differ from our outbound 0x01 0x01; we only use the command + payload.)
  * `command` is a status/event code; `payload` is 4-byte little-endian value(s).
  *
  * Decoded from a full Recipe C brew (see data/ffe2-returns.md):

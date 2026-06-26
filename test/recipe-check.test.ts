@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { checkRecipe, targetWaterMl, totalPourMl, type RecipeConfig } from '../src/config.js';
+import { checkRecipe, recipeErrors, targetWaterMl, totalPourMl, type RecipeConfig } from '../src/config.js';
 
 const base: RecipeConfig = {
   name: 'C', cupType: 'other', doseGrams: 18, grinderSize: 36, rpm: 60, ratio: 17,
@@ -40,4 +40,24 @@ test('ratio out of range warns', () => {
 
 test('ratio off the 0.5 step warns', () => {
   assert.ok(checkRecipe({ ...base, ratio: 17.3 }).some((w) => /0\.5 steps/.test(w)));
+});
+
+test('recipeErrors: valid recipe has none', () => {
+  assert.deepEqual(recipeErrors(base), []);
+});
+
+test('recipeErrors: out-of-range fields are caught', () => {
+  const bad: RecipeConfig = {
+    ...base, doseGrams: 99, grinderSize: 200, rpm: 65,
+    pours: [{ volume: 500, temperature: 200, flowRate: 30, pausing: -5, pattern: 9 as 0 }],
+  };
+  const errs = recipeErrors(bad);
+  assert.ok(errs.some((e) => /doseGrams/.test(e)));
+  assert.ok(errs.some((e) => /grinderSize/.test(e)));
+  assert.ok(errs.some((e) => /rpm/.test(e)));
+  assert.ok(errs.some((e) => /volume/.test(e)));
+  assert.ok(errs.some((e) => /temperature/.test(e)));
+  assert.ok(errs.some((e) => /flowRate/.test(e)));
+  assert.ok(errs.some((e) => /pattern/.test(e)));
+  assert.ok(errs.some((e) => /pausing/.test(e)));
 });

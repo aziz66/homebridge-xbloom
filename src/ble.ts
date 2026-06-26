@@ -56,12 +56,15 @@ export class BleTransport implements Transport {
     }
 
     // Point node-ble at a specific system bus if configured (Docker → host bluetoothd).
-    // Set on this process only; dbus-next reads it when the bus is created.
-    if (this.opts.dbusAddress) {
-      process.env.DBUS_SYSTEM_BUS_ADDRESS = this.opts.dbusAddress;
-    }
-
+    // dbus-next reads DBUS_SYSTEM_BUS_ADDRESS synchronously inside createBluetooth(), so we
+    // set it only around that call and restore it — no lasting process-wide side-effect.
+    const prevBusAddr = process.env.DBUS_SYSTEM_BUS_ADDRESS;
+    if (this.opts.dbusAddress) process.env.DBUS_SYSTEM_BUS_ADDRESS = this.opts.dbusAddress;
     const { bluetooth, destroy } = createBluetooth();
+    if (this.opts.dbusAddress) {
+      if (prevBusAddr === undefined) delete process.env.DBUS_SYSTEM_BUS_ADDRESS;
+      else process.env.DBUS_SYSTEM_BUS_ADDRESS = prevBusAddr;
+    }
     this.bluetooth = bluetooth;
     this.destroyFn = destroy;
 

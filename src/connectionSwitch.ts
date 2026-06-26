@@ -28,6 +28,7 @@ export class ConnectionAccessory {
     this.service.setCharacteristic(Characteristic.Name, 'xBloom Bluetooth');
 
     this.service.getCharacteristic(Characteristic.On)
+      .onGet(() => this.platform.isHeld())
       .onSet((v: CharacteristicValue) => this.platform.setHeld(Boolean(v)));
   }
 
