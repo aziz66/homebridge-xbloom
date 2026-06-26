@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-26
+
+### Fixed
+- **A D-Bus connection failure no longer crashes the Homebridge child bridge.** The plugin now
+  catches the bus `error` event (e.g. AppArmor denials) and reports it as a normal, catchable
+  failure instead of an uncaught exception.
+
+### Added
+- Friendly error for **AppArmor** denials (common on Dockerized Homebridge), pointing to the
+  `security_opt: apparmor=unconfined` fix. README Docker section updated accordingly.
+
+[0.1.4]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v0.1.4
+
 ## [0.1.3] - 2026-06-26
 
 ### Added

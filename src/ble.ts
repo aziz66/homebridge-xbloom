@@ -64,11 +64,21 @@ export class BleTransport implements Transport {
     this.bluetooth = bluetooth;
     this.destroyFn = destroy;
 
+    // dbus-next's MessageBus emits 'error' on connection failures; without a
+    // listener Node turns it into an uncaught exception that crashes the child
+    // bridge. Capture it so it surfaces as a normal, catchable failure instead.
+    let busError: Error | undefined;
+    const bus = (bluetooth as unknown as { dbus?: { on?: (e: string, cb: (e: Error) => void) => void } })?.dbus;
+    bus?.on?.('error', (e: Error) => {
+      busError = e;
+      this.connected = false;
+    });
+
     let adapter;
     try {
       adapter = await bluetooth.defaultAdapter();
     } catch (err) {
-      throw this.bluezError(err);
+      throw this.bluezError(busError ?? err);
     }
     if (!(await adapter.isPowered())) {
       throw new Error('Bluetooth adapter is not powered on (run: bluetoothctl power on)');
@@ -116,10 +126,19 @@ export class BleTransport implements Transport {
     return Buffer.from(v);
   }
 
-  /** Turn a raw D-Bus "no org.bluez" failure into actionable guidance. */
+  /** Turn a raw D-Bus failure into actionable guidance. */
   private bluezError(err: unknown): Error {
     const e = err as { message?: string; text?: string };
     const msg = e?.text ?? e?.message ?? String(err);
+    if (/AppArmor/i.test(msg)) {
+      return new Error(
+        'Blocked by AppArmor: the Docker container is not allowed to reach the host Bluetooth. ' +
+        'Add `security_opt: ["apparmor=unconfined"]` to the Homebridge service in your ' +
+        'docker-compose and recreate the container — see ' +
+        'https://github.com/aziz66/homebridge-xbloom#docker-homebridge. ' +
+        `[underlying: ${msg}]`,
+      );
+    }
     if (/org\.bluez|ServiceUnknown|no .*adapter/i.test(msg)) {
       return new Error(
         'Bluetooth (org.bluez) is not reachable on the D-Bus. ' +

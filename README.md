@@ -121,9 +121,17 @@ services:
     volumes:
       - ./volumes/homebridge:/homebridge
       - /run/dbus/system_bus_socket:/run/host-dbus/system_bus_socket:ro   # ← add this
+    security_opt:
+      - apparmor=unconfined   # ← add this (AppArmor blocks container→host D-Bus otherwise)
 ```
 
 Then `docker compose up -d` to recreate the container.
+
+> **Why `apparmor=unconfined`?** On hosts with AppArmor (e.g. Ubuntu), the default Docker
+> profile + dbus-daemon mediation block a container from talking to the host's system D-Bus
+> (you'd see *"An AppArmor policy prevents this sender…"*). Unconfining lets the container reach
+> Bluetooth. The Homebridge container already runs with host networking; if you'd rather keep
+> confinement, write a custom AppArmor profile that allows `dbus send`.
 
 **2. Set `dbusAddress` in the plugin config** to that path:
 
