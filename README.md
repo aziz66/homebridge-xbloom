@@ -104,9 +104,15 @@ system Bluetooth daemon over D-Bus (it coexists with `bluetoothd` — no adapter
 
 ### Docker Homebridge
 
-The official `homebridge/homebridge` image runs with host networking but has **no Bluetooth
-access by default**, and (with `ENABLE_AVAHI=1`) it runs its **own internal D-Bus**. So mount
-the **host's** system bus at a separate path and point `node-ble` at it:
+> Only needed if your Homebridge runs in Docker. **Native installs (Raspberry Pi, etc.) need
+> nothing here** — the plugin uses the system Bluetooth automatically.
+
+A Docker container can't see the host's Bluetooth by default, and the official
+`homebridge/homebridge` image (with `ENABLE_AVAHI=1`) runs its **own** internal D-Bus. So you
+do **two** small one-time things:
+
+**1. Mount the host's D-Bus socket** into the container — add one line to your Homebridge
+`docker-compose.yml`:
 
 ```yaml
 services:
@@ -114,12 +120,20 @@ services:
     # …existing config…
     volumes:
       - ./volumes/homebridge:/homebridge
-      - /run/dbus/system_bus_socket:/run/host-dbus/system_bus_socket:ro
-    environment:
-      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/host-dbus/system_bus_socket
+      - /run/dbus/system_bus_socket:/run/host-dbus/system_bus_socket:ro   # ← add this
 ```
 
-Then `docker compose up -d`. The image runs as root, so BlueZ's default policy is enough.
+Then `docker compose up -d` to recreate the container.
+
+**2. Set `dbusAddress` in the plugin config** to that path:
+
+```
+unix:path=/run/host-dbus/system_bus_socket
+```
+
+That's it. The plugin points **only its own** Bluetooth connection at the host bus — your
+container's avahi / HomeKit advertising is left completely untouched (no container-wide
+environment variables). The image runs as root, so BlueZ's default permissions are enough.
 
 ### Finding your device's BLE address
 
@@ -260,9 +274,10 @@ persists, toggle the adapter (`bluetoothctl power off && bluetoothctl power on`)
 Homebridge is running as a non-root user without a D-Bus policy. Add the policy in
 [Linux / BlueZ setup](#linux--bluez-setup) and `sudo systemctl reload dbus`.
 
-**Docker: can't reach Bluetooth**
-You need the host D-Bus socket mounted and `DBUS_SYSTEM_BUS_ADDRESS` set — see
-[Docker Homebridge](#docker-homebridge). The container's own avahi D-Bus is **not** the host's.
+**Docker: `org.bluez was not provided by any .service files`**
+The plugin reached the container's D-Bus, which has no Bluetooth. Mount the host D-Bus socket and
+set the `dbusAddress` config option — see [Docker Homebridge](#docker-homebridge). (Two one-time
+steps; no container-wide environment variables needed.)
 
 **Wrong Node version**
 Homebridge v2 requires Node 22 or 24. Check with `node -v`.

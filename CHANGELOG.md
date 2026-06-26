@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-06-26
+
+### Added
+- `dbusAddress` config option to point the plugin's Bluetooth connection at a specific D-Bus
+  system bus — needed only for **Dockerized Homebridge** to reach the host's `bluetoothd`.
+  It's applied to the plugin's process only, so the container's avahi/HomeKit advertising is
+  left untouched (no container-wide environment variables).
+
+### Changed
+- Friendlier error when `org.bluez` isn't reachable on the D-Bus, with a direct pointer to the
+  Docker setup instructions instead of a raw `DBusError`.
+- README Docker section simplified to two one-time steps (mount the host socket + set
+  `dbusAddress`); native (non-Docker) installs need nothing.
+
+### Fixed
+- Dockerized Homebridge installs failing with
+  *"The name org.bluez was not provided by any .service files"*.
+
+[0.1.1]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v0.1.1
+
 ## [0.1.0] - 2026-06-26
 
 Initial public release.

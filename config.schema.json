@@ -24,6 +24,12 @@
         "default": "XBLOOM ",
         "description": "Advertised BLE name prefix used when scanning."
       },
+      "dbusAddress": {
+        "title": "D-Bus address (Docker only)",
+        "type": "string",
+        "placeholder": "unix:path=/run/host-dbus/system_bus_socket",
+        "description": "Only needed when Homebridge runs in Docker. Point this at the HOST's system D-Bus so the plugin can reach Bluetooth. Leave blank on a normal (non-Docker) install. See the README 'Docker' section for the one-time volume mount."
+      },
       "dryRun": {
         "title": "Dry run (log frames, never touch Bluetooth)",
         "type": "boolean",

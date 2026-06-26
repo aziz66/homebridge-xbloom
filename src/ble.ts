@@ -19,6 +19,12 @@ export interface BleOptions {
   address?: string;
   /** Seconds to wait for the device to appear during discovery. */
   discoverTimeoutSec?: number;
+  /**
+   * Custom D-Bus system bus address (e.g. "unix:path=/run/host-dbus/system_bus_socket").
+   * Only needed for Dockerized Homebridge, to reach the HOST's bluetoothd. Applied to
+   * this process only — the container's own avahi/D-Bus is left untouched.
+   */
+  dbusAddress?: string;
 }
 
 export class BleTransport implements Transport {
@@ -48,11 +54,22 @@ export class BleTransport implements Transport {
     }
     const address = this.opts.address.toUpperCase();
 
+    // Point node-ble at a specific system bus if configured (Docker → host bluetoothd).
+    // Set on this process only; dbus-next reads it when the bus is created.
+    if (this.opts.dbusAddress) {
+      process.env.DBUS_SYSTEM_BUS_ADDRESS = this.opts.dbusAddress;
+    }
+
     const { bluetooth, destroy } = createBluetooth();
     this.bluetooth = bluetooth;
     this.destroyFn = destroy;
 
-    const adapter = await bluetooth.defaultAdapter();
+    let adapter;
+    try {
+      adapter = await bluetooth.defaultAdapter();
+    } catch (err) {
+      throw this.bluezError(err);
+    }
     if (!(await adapter.isPowered())) {
       throw new Error('Bluetooth adapter is not powered on (run: bluetoothctl power on)');
     }
@@ -97,6 +114,22 @@ export class BleTransport implements Transport {
     if (!this.notifyChar) throw new Error('BLE not open');
     const v = await this.notifyChar.readValue();
     return Buffer.from(v);
+  }
+
+  /** Turn a raw D-Bus "no org.bluez" failure into actionable guidance. */
+  private bluezError(err: unknown): Error {
+    const e = err as { message?: string; text?: string };
+    const msg = e?.text ?? e?.message ?? String(err);
+    if (/org\.bluez|ServiceUnknown|no .*adapter/i.test(msg)) {
+      return new Error(
+        'Bluetooth (org.bluez) is not reachable on the D-Bus. ' +
+        'If Homebridge runs in Docker, mount the host D-Bus socket into the container and set ' +
+        '"dbusAddress" in the plugin config — see https://github.com/aziz66/homebridge-xbloom#docker. ' +
+        'Otherwise ensure BlueZ is running (sudo systemctl start bluetooth). ' +
+        `[underlying: ${msg}]`,
+      );
+    }
+    return err instanceof Error ? err : new Error(msg);
   }
 
   async close(): Promise<void> {

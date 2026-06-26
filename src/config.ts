@@ -24,6 +24,11 @@ export interface XBloomConfig extends PlatformConfig {
   deviceAddress?: string;
   /** BLE advertised name prefix, default "XBLOOM ". */
   deviceName?: string;
+  /**
+   * Custom D-Bus system bus address — only for Dockerized Homebridge, to reach the
+   * host's bluetoothd (e.g. "unix:path=/run/host-dbus/system_bus_socket").
+   */
+  dbusAddress?: string;
   /** When true, never touch Bluetooth — just log the frames that would be sent. */
   dryRun?: boolean;
   /** Expose a global "Stop Brew" switch. */
