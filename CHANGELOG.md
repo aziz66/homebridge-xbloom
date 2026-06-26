@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-06-26
+
+First stable release. Verified end-to-end on real hardware — a brew triggered from
+HomeKit grinds and brews, with live status (including error reporting) back in Apple Home.
+
+### Added
+- Project logo / branding.
+
+No functional changes since 0.1.4; promoted to 1.0.0 to mark a stable first release.
+
+[1.0.0]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v1.0.0
+
 ## [0.1.4] - 2026-06-26
 
 ### Fixed

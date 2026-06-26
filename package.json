@@ -1,7 +1,7 @@
 {
   "name": "homebridge-xbloom",
   "displayName": "xBloom",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Brew your saved xBloom coffee recipes from HomeKit/Siri over Bluetooth LE.",
   "author": "Abdulaziz Alharbi",
   "license": "MIT",

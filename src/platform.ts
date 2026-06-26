@@ -66,7 +66,13 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
       });
     this.transport.onNotify((n) => this.handleNotify(n));
 
-    this.api.on('didFinishLaunching', () => this.discoverDevices());
+    this.api.on('didFinishLaunching', () => {
+      try {
+        this.discoverDevices();
+      } catch (err) {
+        this.log.error('Failed to set up accessories:', err);
+      }
+    });
   }
 
   configureAccessory(accessory: PlatformAccessory): void {
@@ -178,6 +184,14 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
   }
 
   private handleNotify(n: ParsedNotification): void {
+    try {
+      this.handleNotifyInner(n);
+    } catch (err) {
+      this.log.error('Error handling status notification:', err);
+    }
+  }
+
+  private handleNotifyInner(n: ParsedNotification): void {
     if (n.error) {
       this.log.error(`xBloom: ${n.error}`);
       this.brewingSensor?.setFault(true);
