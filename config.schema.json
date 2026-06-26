@@ -1,0 +1,147 @@
+{
+  "pluginAlias": "XBloom",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Brew xBloom recipes from HomeKit. Each recipe becomes a switch you can trigger by name (\"Hey Siri, turn on Ethiopia\"). Recipes are sent over Bluetooth LE; the machine must be loaded with a pod/grounds and cup.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "xBloom",
+        "required": true
+      },
+      "deviceAddress": {
+        "title": "Device BLE Address",
+        "type": "string",
+        "placeholder": "AA:BB:CC:DD:EE:FF",
+        "description": "Optional. Leave blank to scan by name."
+      },
+      "deviceName": {
+        "title": "Device Name Prefix",
+        "type": "string",
+        "default": "XBLOOM ",
+        "description": "Advertised BLE name prefix used when scanning."
+      },
+      "dryRun": {
+        "title": "Dry run (log frames, never touch Bluetooth)",
+        "type": "boolean",
+        "default": false
+      },
+      "exposeStopSwitch": {
+        "title": "Expose a global \"Stop Brew\" switch",
+        "type": "boolean",
+        "default": true
+      },
+      "exposeConnectionSwitch": {
+        "title": "Expose the \"xBloom Bluetooth\" hold/release switch",
+        "type": "boolean",
+        "default": false,
+        "description": "Optional manual override for the one-device-at-a-time limit. Normal brewing connects on demand and frees the machine automatically, so this is off by default. Enable it to force-hold or force-release the link."
+      },
+      "holdTimeoutSec": {
+        "title": "Bluetooth hold timeout (seconds)",
+        "type": "integer",
+        "default": 300,
+        "minimum": 30,
+        "maximum": 3600,
+        "description": "When the \"xBloom Bluetooth\" switch is turned on, automatically release the link after this many seconds so the machine is never occupied indefinitely. Set 0 to hold until manually turned off.",
+        "condition": { "functionBody": "return model.exposeConnectionSwitch === true;" }
+      },
+      "exposeBrewingSensor": {
+        "title": "Expose the \"xBloom Brewing\" status sensor",
+        "type": "boolean",
+        "default": true
+      },
+      "brewTimeoutSec": {
+        "title": "Brew watch timeout (seconds)",
+        "type": "integer",
+        "default": 300,
+        "minimum": 30,
+        "maximum": 900,
+        "description": "How long to stay connected watching a brew for completion before releasing the Bluetooth link."
+      },
+      "recipes": {
+        "title": "Recipes",
+        "type": "array",
+        "default": [
+          {
+            "name": "Recipe C",
+            "cupType": "other",
+            "doseGrams": 18,
+            "grinderSize": 36,
+            "rpm": 60,
+            "ratio": 17,
+            "cupMax": 110,
+            "cupMin": 90,
+            "pours": [
+              { "volume": 55, "temperature": 93, "flowRate": 3.5, "pattern": 0, "pausing": 40, "vibBefore": false, "vibAfter": false },
+              { "volume": 95, "temperature": 93, "flowRate": 3.5, "pattern": 1, "pausing": 20, "vibBefore": false, "vibAfter": false },
+              { "volume": 85, "temperature": 92, "flowRate": 3.5, "pattern": 2, "pausing": 20, "vibBefore": false, "vibAfter": false },
+              { "volume": 71, "temperature": 92, "flowRate": 3.5, "pattern": 2, "pausing": 5, "vibBefore": false, "vibAfter": false }
+            ]
+          }
+        ],
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "title": "Recipe Name", "type": "string", "required": true },
+            "cupType": {
+              "title": "Cup Type",
+              "type": "string",
+              "default": "xdripper",
+              "oneOf": [
+                { "title": "xDripper", "enum": ["xdripper"] },
+                { "title": "xPod", "enum": ["xpod"] },
+                { "title": "Other", "enum": ["other"] }
+              ],
+              "required": true
+            },
+            "doseGrams": { "title": "Bean Dose (g)", "type": "number", "default": 16, "minimum": 5, "maximum": 40, "required": true },
+            "grinderSize": { "title": "Grind Size", "type": "integer", "default": 60, "minimum": 1, "maximum": 80, "required": true },
+            "rpm": {
+              "title": "Grinder RPM",
+              "type": "integer",
+              "default": 100,
+              "oneOf": [
+                { "title": "60", "enum": [60] }, { "title": "70", "enum": [70] }, { "title": "80", "enum": [80] },
+                { "title": "90", "enum": [90] }, { "title": "100", "enum": [100] }, { "title": "110", "enum": [110] }, { "title": "120", "enum": [120] }
+              ],
+              "required": true
+            },
+            "ratio": { "title": "Brew Ratio (1:N)", "type": "number", "default": 16, "minimum": 1, "maximum": 25, "required": true },
+            "cupMax": { "title": "Cup Weight Max (g, advanced)", "type": "number" },
+            "cupMin": { "title": "Cup Weight Min (g, advanced)", "type": "number" },
+            "pours": {
+              "title": "Pours",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "volume": { "title": "Water (ml)", "type": "integer", "minimum": 1, "maximum": 300, "required": true },
+                  "temperature": { "title": "Temp (°C)", "type": "number", "default": 93, "minimum": 40, "maximum": 100, "required": true },
+                  "flowRate": { "title": "Flow Rate", "type": "number", "default": 3.5, "minimum": 0.5, "maximum": 7.0, "required": true },
+                  "pattern": {
+                    "title": "Pour Pattern",
+                    "type": "integer",
+                    "default": 2,
+                    "oneOf": [
+                      { "title": "Center", "enum": [0] },
+                      { "title": "Circular", "enum": [1] },
+                      { "title": "Spiral", "enum": [2] }
+                    ],
+                    "required": true
+                  },
+                  "pausing": { "title": "Pause After (s)", "type": "integer", "default": 0, "minimum": 0, "maximum": 300, "required": true },
+                  "vibBefore": { "title": "Vibrate Before", "type": "boolean", "default": false },
+                  "vibAfter": { "title": "Vibrate After", "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

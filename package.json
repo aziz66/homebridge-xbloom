@@ -1,0 +1,62 @@
+{
+  "name": "homebridge-xbloom",
+  "displayName": "xBloom",
+  "version": "0.1.0",
+  "description": "Brew your saved xBloom coffee recipes from HomeKit/Siri over Bluetooth LE.",
+  "author": "Abdulaziz Alharbi",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "homepage": "https://github.com/aziz66/homebridge-xbloom#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aziz66/homebridge-xbloom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aziz66/homebridge-xbloom/issues"
+  },
+  "funding": {
+    "type": "ko-fi",
+    "url": "https://ko-fi.com/aziz66"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "xbloom",
+    "coffee",
+    "coffee-maker",
+    "pour-over",
+    "bluetooth",
+    "ble",
+    "siri",
+    "homekit"
+  ],
+  "engines": {
+    "homebridge": "^1.8.0 || ^2.0.0",
+    "node": "^22.12.0 || ^24.0.0"
+  },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "lint": "eslint .",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.13.0",
+    "homebridge": "^2.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.12.0"
+  },
+  "dependencies": {
+    "node-ble": "^1.13.0"
+  }
+}
