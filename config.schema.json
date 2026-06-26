@@ -5,12 +5,12 @@
   "headerDisplay": "Brew xBloom recipes from HomeKit. Each recipe becomes a switch you can trigger by name (\"Hey Siri, turn on Ethiopia\"). Recipes are sent over Bluetooth LE; the machine must be loaded with a pod/grounds and cup.",
   "schema": {
     "type": "object",
+    "required": ["name"],
     "properties": {
       "name": {
         "title": "Name",
         "type": "string",
-        "default": "xBloom",
-        "required": true
+        "default": "xBloom"
       },
       "deviceAddress": {
         "title": "Device BLE Address (optional)",
@@ -91,8 +91,9 @@
         ],
         "items": {
           "type": "object",
+          "required": ["name", "cupType", "doseGrams", "grinderSize", "rpm", "ratio", "pours"],
           "properties": {
-            "name": { "title": "Recipe Name", "type": "string", "required": true },
+            "name": { "title": "Recipe Name", "type": "string" },
             "cupType": {
               "title": "Cup Type",
               "type": "string",
@@ -101,11 +102,10 @@
                 { "title": "xDripper", "enum": ["xdripper"] },
                 { "title": "xPod", "enum": ["xpod"] },
                 { "title": "Other", "enum": ["other"] }
-              ],
-              "required": true
+              ]
             },
-            "doseGrams": { "title": "Bean Dose (g)", "type": "number", "default": 16, "minimum": 5, "maximum": 40, "required": true },
-            "grinderSize": { "title": "Grind Size", "type": "integer", "default": 60, "minimum": 1, "maximum": 80, "required": true },
+            "doseGrams": { "title": "Bean Dose (g)", "type": "number", "default": 16, "minimum": 5, "maximum": 40 },
+            "grinderSize": { "title": "Grind Size", "type": "integer", "default": 60, "minimum": 1, "maximum": 80 },
             "rpm": {
               "title": "Grinder RPM",
               "type": "integer",
@@ -113,10 +113,9 @@
               "oneOf": [
                 { "title": "60", "enum": [60] }, { "title": "70", "enum": [70] }, { "title": "80", "enum": [80] },
                 { "title": "90", "enum": [90] }, { "title": "100", "enum": [100] }, { "title": "110", "enum": [110] }, { "title": "120", "enum": [120] }
-              ],
-              "required": true
+              ]
             },
-            "ratio": { "title": "Brew Ratio (1:N)", "type": "number", "default": 16, "minimum": 5, "maximum": 25, "multipleOf": 0.5, "required": true, "description": "Water-to-coffee ratio, 1:5 to 1:25 in 0.5 steps. Dose and ratio are the source of truth: your pour volumes should add up to dose × ratio (e.g. 18 g × 17 = 306 ml)." },
+            "ratio": { "title": "Brew Ratio (1:N)", "type": "number", "default": 16, "minimum": 5, "maximum": 25, "multipleOf": 0.5, "description": "Water-to-coffee ratio, 1:5 to 1:25 in 0.5 steps. Dose and ratio are the source of truth: your pour volumes should add up to dose × ratio (e.g. 18 g × 17 = 306 ml)." },
             "cupMax": { "title": "Cup Weight Max (g, advanced)", "type": "number" },
             "cupMin": { "title": "Cup Weight Min (g, advanced)", "type": "number" },
             "pours": {
@@ -124,10 +123,11 @@
               "type": "array",
               "items": {
                 "type": "object",
+                "required": ["volume", "temperature", "flowRate", "pattern", "pausing"],
                 "properties": {
-                  "volume": { "title": "Water (ml)", "type": "integer", "minimum": 1, "maximum": 300, "required": true },
-                  "temperature": { "title": "Temp (°C)", "type": "number", "default": 93, "minimum": 40, "maximum": 100, "required": true },
-                  "flowRate": { "title": "Flow Rate", "type": "number", "default": 3.5, "minimum": 0.5, "maximum": 7.0, "required": true },
+                  "volume": { "title": "Water (ml)", "type": "integer", "minimum": 1, "maximum": 300 },
+                  "temperature": { "title": "Temp (°C)", "type": "number", "default": 93, "minimum": 40, "maximum": 100 },
+                  "flowRate": { "title": "Flow Rate", "type": "number", "default": 3.5, "minimum": 0.5, "maximum": 7.0 },
                   "pattern": {
                     "title": "Pour Pattern",
                     "type": "integer",
@@ -136,10 +136,9 @@
                       { "title": "Center", "enum": [0] },
                       { "title": "Circular", "enum": [1] },
                       { "title": "Spiral", "enum": [2] }
-                    ],
-                    "required": true
+                    ]
                   },
-                  "pausing": { "title": "Pause After (s)", "type": "integer", "default": 0, "minimum": 0, "maximum": 300, "required": true },
+                  "pausing": { "title": "Pause After (s)", "type": "integer", "default": 0, "minimum": 0, "maximum": 300 },
                   "vibBefore": { "title": "Vibrate Before", "type": "boolean", "default": false },
                   "vibAfter": { "title": "Vibrate After", "type": "boolean", "default": false }
                 }

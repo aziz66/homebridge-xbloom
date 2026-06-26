@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-06-26
+
+Address the Homebridge verification automated checks.
+
+### Fixed
+- **config.schema.json** now uses standard JSON Schema `required` **arrays** at the object level
+  instead of `"required": true` on individual fields, so the schema validates correctly.
+- Added npm `overrides` to pull patched versions of the transitive build-chain packages
+  (`form-data`, `qs`, `tough-cookie`, `uuid`, `tar`) that come in through node-ble's **optional**
+  native dependency, clearing the critical/high advisories. (These live in an optional native
+  build toolchain that isn't part of the runtime path.)
+
+[1.1.3]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v1.1.3
+
 ## [1.1.2] - 2026-06-26
 
 Hardening from a pre-publish multi-perspective code audit, plus updated branding.
