@@ -74,6 +74,13 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
         this.log.error('Failed to set up accessories:', err);
       }
     });
+
+    // Release the Bluetooth link cleanly when Homebridge stops/restarts.
+    this.api.on('shutdown', () => {
+      if (this.holdTimer) clearTimeout(this.holdTimer);
+      this.held = false;
+      this.transport.close().catch(() => {});
+    });
   }
 
   configureAccessory(accessory: PlatformAccessory): void {
@@ -122,6 +129,8 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
       await this.ensureConnected();
       this.log.info('Stop → BREW_STOP');
       await this.transport.send(stopFrame());
+      // End any in-progress brew watch so the recipe switch resets promptly.
+      this.resolveComplete?.();
     } catch (err) {
       this.log.error('Stop failed:', err);
     } finally {

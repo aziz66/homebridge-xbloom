@@ -178,7 +178,6 @@ Use the Homebridge UI settings, or add a platform block to `config.json`:
     {
       "platform": "XBloom",
       "name": "xBloom",
-      "deviceAddress": "AA:BB:CC:DD:EE:FF",
       "exposeBrewingSensor": true,
       "exposeStopSwitch": true,
       "exposeConnectionSwitch": false,

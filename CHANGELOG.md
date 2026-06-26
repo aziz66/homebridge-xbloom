@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-26
+
+### Fixed
+- **Retry transient Bluetooth connect aborts** (e.g. `le-connection-abort-by-local`) instead of
+  failing the brew on the first hiccup.
+- **Clean up on a failed connection** so the next attempt starts fresh (no leaked D-Bus handles).
+- **Release the Bluetooth link on Homebridge shutdown/restart**, freeing the machine for your phone.
+- **Stop** now resets the recipe switch promptly instead of waiting for the brew-watch timeout.
+
+[1.1.1]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v1.1.1
+
 ## [1.1.0] - 2026-06-26
 
 ### Added

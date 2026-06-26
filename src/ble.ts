@@ -75,44 +75,80 @@ export class BleTransport implements Transport {
       this.connected = false;
     });
 
-    let adapter;
     try {
-      adapter = await bluetooth.defaultAdapter();
+      const adapter = await bluetooth.defaultAdapter();
+      if (!(await adapter.isPowered())) {
+        throw new Error('Bluetooth adapter is not powered on (run: bluetoothctl power on)');
+      }
+      if (!(await adapter.isDiscovering())) await adapter.startDiscovery();
+
+      const timeoutMs = (this.opts.discoverTimeoutSec ?? 30) * 1000;
+      if (this.opts.address) {
+        const address = this.opts.address.toUpperCase();
+        this.log.info(`[ble] waiting for ${address} …`);
+        this.device = await adapter.waitDevice(address, timeoutMs);
+      } else {
+        this.device = await this.findDeviceByName(adapter, this.opts.namePrefix!.trim(), timeoutMs);
+      }
+
+      await this.establishWithRetry();
+      this.connected = true;
+      this.device.once?.('disconnect', () => {
+        this.connected = false;
+        this.log.info('[ble] device disconnected');
+      });
+      this.log.info('[ble] FFE1 write + FFE2 notify ready');
     } catch (err) {
+      await this.cleanup();
       throw this.bluezError(busError ?? err);
     }
-    if (!(await adapter.isPowered())) {
-      throw new Error('Bluetooth adapter is not powered on (run: bluetoothctl power on)');
-    }
-    if (!(await adapter.isDiscovering())) await adapter.startDiscovery();
+  }
 
-    const timeoutMs = (this.opts.discoverTimeoutSec ?? 30) * 1000;
-    if (this.opts.address) {
-      const address = this.opts.address.toUpperCase();
-      this.log.info(`[ble] waiting for ${address} …`);
-      this.device = await adapter.waitDevice(address, timeoutMs);
-    } else {
-      this.device = await this.findDeviceByName(adapter, this.opts.namePrefix!.trim(), timeoutMs);
-    }
+  /** connect + open the GATT service + subscribe (the part that can transiently abort). */
+  private async establish(): Promise<void> {
     await this.device.connect();
-    this.connected = true;
-    this.device.once?.('disconnect', () => {
-      this.connected = false;
-      this.log.info('[ble] device disconnected');
-    });
-    this.log.info('[ble] connected');
-
     const gatt = await this.device.gatt();
     const service = await gatt.getPrimaryService(SERVICE_UUID);
     this.writeChar = await service.getCharacteristic(WRITE_UUID);
     this.notifyChar = await service.getCharacteristic(NOTIFY_UUID);
-
     await this.notifyChar.startNotifications();
     this.notifyChar.on('valuechanged', (buf: Buffer) => {
       const n = parseNotification(Buffer.from(buf));
       if (n && this.notifyCb) this.notifyCb(n);
     });
-    this.log.info('[ble] FFE1 write + FFE2 notify ready');
+  }
+
+  private async establishWithRetry(attempts = 3): Promise<void> {
+    for (let i = 1; i <= attempts; i++) {
+      try {
+        await this.establish();
+        return;
+      } catch (err) {
+        const msg = (err as Error)?.message ?? String(err);
+        const transient = /abort|timed out|busy|not ready|in progress|temporarily|no reply/i.test(msg);
+        if (i === attempts || !transient) throw err;
+        this.log.warn(`[ble] connect attempt ${i} failed (${msg}); retrying…`);
+        await this.device?.disconnect?.().catch(() => {});
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+  }
+
+  /** Tear down all handles; safe to call repeatedly. */
+  private async cleanup(): Promise<void> {
+    try {
+      if (this.notifyChar) await this.notifyChar.stopNotifications().catch(() => {});
+      if (this.device) await this.device.disconnect().catch(() => {});
+    } catch {
+      // ignore teardown errors
+    }
+    this.connected = false;
+    this.destroyFn?.();
+    this.destroyFn = null;
+    this.bluetooth = null;
+    this.device = null;
+    this.writeChar = null;
+    this.notifyChar = null;
   }
 
   async send(frame: Buffer): Promise<void> {
@@ -186,16 +222,6 @@ export class BleTransport implements Transport {
   }
 
   async close(): Promise<void> {
-    try {
-      if (this.notifyChar) await this.notifyChar.stopNotifications().catch(() => {});
-      if (this.device) await this.device.disconnect().catch(() => {});
-    } finally {
-      this.connected = false;
-      this.destroyFn?.();
-      this.bluetooth = null;
-      this.device = null;
-      this.writeChar = null;
-      this.notifyChar = null;
-    }
+    await this.cleanup();
   }
 }
