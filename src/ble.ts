@@ -15,8 +15,10 @@ const WRITE_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb'; // FFE1, write / writ
 const NOTIFY_UUID = '0000ffe2-0000-1000-8000-00805f9b34fb'; // FFE2, notify
 
 export interface BleOptions {
-  /** BLE MAC, e.g. "AA:BB:CC:DD:EE:FF". Required for connect. */
+  /** BLE MAC, e.g. "AA:BB:CC:DD:EE:FF". If omitted, scans by namePrefix. */
   address?: string;
+  /** Advertised name prefix to scan for when address is omitted, e.g. "XBLOOM ". */
+  namePrefix?: string;
   /** Seconds to wait for the device to appear during discovery. */
   discoverTimeoutSec?: number;
   /**
@@ -49,10 +51,9 @@ export class BleTransport implements Transport {
 
   async open(): Promise<void> {
     if (this.connected) return;
-    if (!this.opts.address) {
-      throw new Error('deviceAddress is required for BLE (e.g. AA:BB:CC:DD:EE:FF)');
+    if (!this.opts.address && !this.opts.namePrefix) {
+      throw new Error('Set deviceAddress (e.g. AA:BB:CC:DD:EE:FF) or deviceName (a name prefix) in the config.');
     }
-    const address = this.opts.address.toUpperCase();
 
     // Point node-ble at a specific system bus if configured (Docker → host bluetoothd).
     // Set on this process only; dbus-next reads it when the bus is created.
@@ -86,8 +87,13 @@ export class BleTransport implements Transport {
     if (!(await adapter.isDiscovering())) await adapter.startDiscovery();
 
     const timeoutMs = (this.opts.discoverTimeoutSec ?? 30) * 1000;
-    this.log.info(`[ble] waiting for ${address} …`);
-    this.device = await adapter.waitDevice(address, timeoutMs);
+    if (this.opts.address) {
+      const address = this.opts.address.toUpperCase();
+      this.log.info(`[ble] waiting for ${address} …`);
+      this.device = await adapter.waitDevice(address, timeoutMs);
+    } else {
+      this.device = await this.findDeviceByName(adapter, this.opts.namePrefix!.trim(), timeoutMs);
+    }
     await this.device.connect();
     this.connected = true;
     this.device.once?.('disconnect', () => {
@@ -124,6 +130,34 @@ export class BleTransport implements Transport {
     if (!this.notifyChar) throw new Error('BLE not open');
     const v = await this.notifyChar.readValue();
     return Buffer.from(v);
+  }
+
+  /** Scan discovered devices for one whose advertised name starts with `prefix`. */
+  private async findDeviceByName(adapter: any, prefix: string, timeoutMs: number): Promise<any> {
+    const want = prefix.toLowerCase();
+    this.log.info(`[ble] scanning for a device named "${prefix}…" (no address configured)`);
+    const deadline = Date.now() + timeoutMs;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    while (Date.now() < deadline) {
+      const addresses: string[] = await adapter.devices().catch(() => []);
+      for (const addr of addresses) {
+        try {
+          const dev = await adapter.getDevice(addr);
+          const name = (await dev.getName().catch(() => '')) || (await dev.getAlias().catch(() => ''));
+          if (name && name.toLowerCase().startsWith(want)) {
+            this.log.info(`[ble] found "${name}" (${addr})`);
+            return dev;
+          }
+        } catch {
+          // device vanished between listing and querying — ignore
+        }
+      }
+      await sleep(800);
+    }
+    throw new Error(
+      `No device advertising a name starting with "${prefix}" was found within ${Math.round(timeoutMs / 1000)}s. ` +
+      'Make sure the machine is awake and not connected to your phone, or set deviceAddress in the config.',
+    );
   }
 
   /** Turn a raw D-Bus failure into actionable guidance. */

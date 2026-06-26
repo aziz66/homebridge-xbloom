@@ -146,15 +146,25 @@ That's it. The plugin points **only its own** Bluetooth connection at the host b
 container's avahi / HomeKit advertising is left completely untouched (no container-wide
 environment variables). The image runs as root, so BlueZ's default permissions are enough.
 
-### Finding your device's BLE address
+### Finding your device (address is optional)
+
+**You usually don't need the MAC address.** Leave `deviceAddress` **blank** and the plugin
+auto-discovers your machine by its advertised name (default prefix `XBLOOM `). xBloom machines
+advertise as `XBLOOM <number>`, so the default matches.
+
+Set an explicit address only if you have **more than one** xBloom, or auto-discovery isn't
+finding it. To find it:
 
 ```bash
 bluetoothctl --timeout 12 scan le | grep -i xbloom
 # e.g. [NEW] Device AA:BB:CC:DD:EE:FF XBLOOM 123456
 ```
 
-The machine only advertises while **awake** and **not connected to another device**
-(disconnect the phone app first). Put that `XX:XX:XX:XX:XX:XX` address in the config.
+Other ways to find the MAC: the xBloom app (machine/Bluetooth info), or your router's
+DHCP/device list (look for the XBLOOM hostname).
+
+> Either way, the machine only advertises while **awake** and **not connected to another device**
+> (disconnect the phone app first).
 
 ---
 
@@ -200,7 +210,8 @@ Use the Homebridge UI settings, or add a platform block to `config.json`:
 
 | Option | Default | Description |
 |---|---|---|
-| `deviceAddress` | — | Machine BLE address (`XX:XX:XX:XX:XX:XX`). Required for real brewing. |
+| `deviceAddress` | — | Machine BLE address. **Optional** — leave blank to auto-find by name. Set only for multiple machines. |
+| `deviceName` | `XBLOOM ` | Name prefix used to auto-find the machine when no address is set. |
 | `recipes` | `[]` | Your recipes (see below). Each becomes a switch. |
 | `dryRun` | `false` | Log the frames that *would* be sent without touching Bluetooth. Great for first setup. |
 | `exposeBrewingSensor` | `true` | Expose the `xBloom Brewing` status sensor. |
@@ -275,8 +286,10 @@ the app (or disconnect it) and try again.
 
 ## Troubleshooting
 
-**"deviceAddress is required" / brew does nothing**
-Set `deviceAddress` in the config. Find it with `bluetoothctl --timeout 12 scan le | grep -i xbloom`.
+**"No device advertising a name starting with XBLOOM was found"**
+Auto-discovery couldn't see the machine. Make sure it's **awake** and **not connected to your
+phone** (one device at a time). If you have multiple xBloom machines, set an explicit
+`deviceAddress` (find it with `bluetoothctl --timeout 12 scan le | grep -i xbloom`).
 
 **Device not found / connect times out**
 - The machine only advertises while **awake** and **not connected to your phone**. Wake it and

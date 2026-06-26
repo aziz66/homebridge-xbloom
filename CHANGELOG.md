@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-26
+
+### Added
+- **Auto-discovery by name.** Leave `deviceAddress` blank and the plugin finds your machine by
+  its advertised name (default prefix `XBLOOM `) — no need to look up a MAC address. Set an
+  explicit address only if you have more than one machine.
+
+### Fixed
+- The config/README previously implied "leave blank to scan by name," but that path wasn't
+  implemented (it errored). It now works.
+
+[1.1.0]: https://github.com/aziz66/homebridge-xbloom/releases/tag/v1.1.0
+
 ## [1.0.0] - 2026-06-26
 
 First stable release. Verified end-to-end on real hardware — a brew triggered from

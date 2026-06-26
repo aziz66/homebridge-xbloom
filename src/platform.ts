@@ -61,6 +61,7 @@ export class XBloomPlatform implements DynamicPlatformPlugin {
       ? new DryRunTransport(log)
       : new BleTransport(log, {
         address: config.deviceAddress,
+        namePrefix: config.deviceName ?? 'XBLOOM ',
         discoverTimeoutSec: 30,
         dbusAddress: config.dbusAddress,
       });

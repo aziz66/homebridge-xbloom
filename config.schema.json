@@ -13,16 +13,16 @@
         "required": true
       },
       "deviceAddress": {
-        "title": "Device BLE Address",
+        "title": "Device BLE Address (optional)",
         "type": "string",
         "placeholder": "AA:BB:CC:DD:EE:FF",
-        "description": "Optional. Leave blank to scan by name."
+        "description": "Leave blank to auto-find your machine by name (recommended). Set this only if you have more than one xBloom or auto-discovery isn't finding it."
       },
       "deviceName": {
         "title": "Device Name Prefix",
         "type": "string",
         "default": "XBLOOM ",
-        "description": "Advertised BLE name prefix used when scanning."
+        "description": "Used to auto-find the machine when no address is set. xBloom machines advertise as \"XBLOOM <number>\", so the default \"XBLOOM \" matches any of them."
       },
       "dbusAddress": {
         "title": "D-Bus address (Docker only)",
