@@ -124,7 +124,7 @@ export class BleTransport implements Transport {
       return new Error(
         'Bluetooth (org.bluez) is not reachable on the D-Bus. ' +
         'If Homebridge runs in Docker, mount the host D-Bus socket into the container and set ' +
-        '"dbusAddress" in the plugin config — see https://github.com/aziz66/homebridge-xbloom#docker. ' +
+        '"dbusAddress" in the plugin config — see https://github.com/aziz66/homebridge-xbloom#docker-homebridge. ' +
         'Otherwise ensure BlueZ is running (sudo systemctl start bluetooth). ' +
         `[underlying: ${msg}]`,
       );
