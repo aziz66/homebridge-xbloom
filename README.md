@@ -7,6 +7,7 @@
 [![npm](https://img.shields.io/npm/v/homebridge-xbloom.svg)](https://www.npmjs.com/package/homebridge-xbloom)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![ko-fi](https://img.shields.io/badge/support-ko--fi-ff5e5b.svg)](https://ko-fi.com/aziz66)
+[![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=flat)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 Brew your saved **xBloom** coffee recipes from **HomeKit / Siri**, over Bluetooth LE.
 
